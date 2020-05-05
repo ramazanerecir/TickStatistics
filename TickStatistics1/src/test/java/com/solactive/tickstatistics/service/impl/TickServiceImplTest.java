@@ -1,16 +1,12 @@
 package com.solactive.tickstatistics.service.impl;
 
 import com.solactive.tickstatistics.component.TickValidator;
-import com.solactive.tickstatistics.configuration.TickStatisticsConfiguration;
 import com.solactive.tickstatistics.entity.dto.TickDto;
-import com.solactive.tickstatistics.event.TickEventCreated;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.sql.Timestamp;
 import java.util.Date;
