@@ -1,5 +1,7 @@
 package com.solactive.tickstatistics.service.impl;
 
+import com.solactive.tickstatistics.entity.CalculationEvent;
+import com.solactive.tickstatistics.enums.CalculationType;
 import com.solactive.tickstatistics.event.TickEventCreated;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,11 +33,11 @@ class TickEventPublisherImplTest {
     void publish() {
         String instrument = "IBM.N";
 
-        tickEventPublisher.publish(instrument);
+        tickEventPublisher.publish(instrument, CalculationType.SCHEDULED);
 
         verify(applicationEventPublisher, times(1))
                 .publishEvent(publishEventCaptor.capture());
 
-        assertEquals(publishEventCaptor.getValue().getSource().toString(), instrument);
+        assertEquals(((CalculationEvent)publishEventCaptor.getValue().getSource()).getInstrument(), instrument);
     }
 }

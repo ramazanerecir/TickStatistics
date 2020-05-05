@@ -5,13 +5,16 @@ import com.solactive.tickstatistics.configuration.TickStatisticsConfiguration;
 import com.solactive.tickstatistics.entity.InstrumentTick;
 import com.solactive.tickstatistics.entity.Tick;
 import com.solactive.tickstatistics.entity.dto.TickDto;
+import com.solactive.tickstatistics.enums.CalculationType;
 import com.solactive.tickstatistics.service.TickEventPublisher;
 import com.solactive.tickstatistics.repository.TickRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,12 +47,14 @@ public class TickRepositoryImpl implements TickRepository {
     {
         instrumentMap.putIfAbsent(instrument, new InstrumentTick(instrument));
         instrumentMap.get(instrument).getTickList().add(tick);
+        instrumentMap.get(instrument).setUpdatedAt(new Timestamp(new Date().getTime()).getTime());
+
     }
 
     protected void createTickEvent(String instrument)
     {
-        tickEventPublisher.publish(instrument);
-        tickEventPublisher.publish(TickStatisticsConfiguration.aggregatedStatisticsName);
+        tickEventPublisher.publish(instrument, CalculationType.NEWTICK);
+        tickEventPublisher.publish(TickStatisticsConfiguration.aggregatedStatisticsName, CalculationType.NEWTICK);
     }
 
     @Override
@@ -63,6 +68,7 @@ public class TickRepositoryImpl implements TickRepository {
         else {
             instrumentTick = new InstrumentTick();
             instrumentTick.setInstrument(instrument);
+            instrumentTick.setUpdatedAt(instrumentMap.get(instrument).getUpdatedAt());
             instrumentTick.setTickList(instrumentMap.get(instrument).getTickList()
                     .parallelStream()
                     .filter(t -> tickValidator.validateTimestamp(t.getTimestamp()))
@@ -83,6 +89,10 @@ public class TickRepositoryImpl implements TickRepository {
                 .collect(Collectors.toList());
 
         instrumentTick.setInstrument(TickStatisticsConfiguration.aggregatedStatisticsName);
+        instrumentTick.setUpdatedAt(instrumentMap.values()
+                .parallelStream()
+                .mapToLong(InstrumentTick::getUpdatedAt)
+                .max().orElse(0));
         instrumentTick.setTickList(tickList);
         return instrumentTick;
     }

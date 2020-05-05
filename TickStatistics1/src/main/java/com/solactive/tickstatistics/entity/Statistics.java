@@ -21,4 +21,25 @@ public class Statistics implements Serializable {
     private long count;
 
     private long calculatedAt;
+    private long instrumentUpdatedAt;
+
+    public Statistics copy()
+    {
+        Statistics statistics = new Statistics();
+        statistics.setInstrument(this.instrument);
+        statistics.setAvg(this.avg);
+        statistics.setMax(this.max);
+        statistics.setMin(min);
+        statistics.setMaxDrawdown(maxDrawdown);
+        statistics.setVolatility(volatility);
+        statistics.setQuantile(this.quantile);
+        statistics.setTwap(this.twap);
+        statistics.setTwap2(this.twap2);
+        statistics.setCount(this.count);
+        statistics.setCalculatedAt(this.calculatedAt);
+        statistics.setInstrumentUpdatedAt(this.instrumentUpdatedAt);
+
+        return statistics;
+    }
+
 }

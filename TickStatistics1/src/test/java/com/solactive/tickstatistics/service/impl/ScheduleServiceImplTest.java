@@ -1,6 +1,7 @@
 package com.solactive.tickstatistics.service.impl;
 
 import com.solactive.tickstatistics.configuration.TickStatisticsConfiguration;
+import com.solactive.tickstatistics.enums.CalculationType;
 import com.solactive.tickstatistics.repository.TickRepository;
 import com.solactive.tickstatistics.service.TickEventPublisher;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class ScheduleServiceImplTest {
     @Captor
     protected ArgumentCaptor<String> tickCaptor;
 
+    @Captor
+    protected ArgumentCaptor<CalculationType> calculationTypeCaptor;
+
     @Test
     void recalculateStatistics() {
         String instrument = "IBM.N";
@@ -53,8 +57,9 @@ class ScheduleServiceImplTest {
         scheduleService.createTickEvent(instrument);
 
         verify(tickEventPublisher, times(1))
-                .publish(tickCaptor.capture());
+                .publish(tickCaptor.capture(), calculationTypeCaptor.capture());
 
         assertEquals(tickCaptor.getValue(), instrument);
+        assertEquals(calculationTypeCaptor.getValue(), CalculationType.SCHEDULED);
     }
 }

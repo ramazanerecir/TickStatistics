@@ -1,6 +1,7 @@
 package com.solactive.tickstatistics.service.impl;
 
 import com.solactive.tickstatistics.configuration.TickStatisticsConfiguration;
+import com.solactive.tickstatistics.enums.CalculationType;
 import com.solactive.tickstatistics.repository.TickRepository;
 import com.solactive.tickstatistics.service.ScheduleService;
 import com.solactive.tickstatistics.service.TickEventPublisher;
@@ -25,6 +26,6 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     protected void createTickEvent(String instrument)
     {
-        tickEventPublisher.publish(instrument);
+        tickEventPublisher.publish(instrument, CalculationType.SCHEDULED);
     }
 }

@@ -14,6 +14,9 @@ public class InstrumentTick implements Serializable {
     String instrument;
     List<Tick> tickList;
 
+    long updatedAt;
+    Statistics statistics;
+
     public InstrumentTick(String instrument)
     {
         this.instrument = instrument;

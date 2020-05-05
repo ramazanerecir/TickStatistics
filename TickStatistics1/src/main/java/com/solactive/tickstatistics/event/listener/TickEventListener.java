@@ -1,7 +1,10 @@
 package com.solactive.tickstatistics.event.listener;
 
 import com.solactive.tickstatistics.configuration.TickStatisticsConfiguration;
+import com.solactive.tickstatistics.entity.CalculationEvent;
 import com.solactive.tickstatistics.entity.InstrumentTick;
+import com.solactive.tickstatistics.entity.Statistics;
+import com.solactive.tickstatistics.enums.CalculationType;
 import com.solactive.tickstatistics.event.TickEventCreated;
 import com.solactive.tickstatistics.repository.StatisticsRepository;
 import com.solactive.tickstatistics.repository.TickRepository;
@@ -29,37 +32,42 @@ public class TickEventListener {
     @EventListener
     public void listenTickEvent(TickEventCreated tickEventCreated) {
 
-        String instrument = tickEventCreated.getSource().toString();
+        CalculationEvent calculationEvent = (CalculationEvent)tickEventCreated.getSource();
 
-        if(instrument.equals(TickStatisticsConfiguration.aggregatedStatisticsName))
+        sendToCalculationQueue(calculationEvent);
+    }
+
+    private void sendToCalculationQueue(CalculationEvent calculationEvent) {
+
+        InstrumentTick instrumentTick;
+
+        if(calculationEvent.getInstrument().equals(TickStatisticsConfiguration.aggregatedStatisticsName))
         {
-            sendToCalculationQueue();
+            instrumentTick = tickRepository.getFilteredAllTicks();
         }
         else
         {
-            sendToCalculationQueue(instrument);
+            instrumentTick = tickRepository.getFilteredInstrumentTick(calculationEvent.getInstrument());
         }
-    }
 
-    private void sendToCalculationQueue(String instrument) {
-        InstrumentTick instrumentTick = tickRepository.getFilteredInstrumentTick(instrument);
+        Statistics statistics = statisticsRepository.get(calculationEvent.getInstrument());
 
-        if(!(instrumentTick.getTickList().isEmpty() &&
-                (statisticsRepository.get(instrument) == null ||
-                        statisticsRepository.get(instrument).getCount() == 0)))
+        if(instrumentTick.getTickList().isEmpty() &&
+                (statistics == null || statistics.getCount() == 0))
         {
-            rabbitTemplate.convertAndSend(exchangeName, routingName, instrumentTick);
+            //No need to calculation
+            return;
         }
-    }
 
-    private void sendToCalculationQueue() {
-        InstrumentTick instrumentTick = tickRepository.getFilteredAllTicks();
-
-        if(!(instrumentTick.getTickList().isEmpty() &&
-                (statisticsRepository.get(instrumentTick.getInstrument()) == null ||
-                        statisticsRepository.get(instrumentTick.getInstrument()).getCount() == 0)))
+        if(calculationEvent.getCalculationType() == CalculationType.SCHEDULED &&
+                !instrumentTick.getTickList().isEmpty() &&
+                statistics.getCount() == instrumentTick.getTickList().size() &&
+                statistics.getInstrumentUpdatedAt() == instrumentTick.getUpdatedAt())
         {
-            rabbitTemplate.convertAndSend(exchangeName, routingName, instrumentTick);
+            //No need to calculate all, Only Twap calculation is required
+            instrumentTick.setStatistics(statistics.copy());
         }
+
+        rabbitTemplate.convertAndSend(exchangeName, routingName, instrumentTick);
     }
 }
