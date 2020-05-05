@@ -1,14 +1,18 @@
 # TickStatistics
 Tick Statistics service in a sliding time interval
 
-Requirements
+# Requirements
 Java 8
 Spring Boot
 Rabbit MQ
 Lombok
 JUnit
+Docker
 
-Project
+# Before Running Application
+docker-compose -f docker-compose.yml up -d
+
+# About Project
 It is a Restful API to monitor the incoming instrument prices. 
 The main use case for that API is to provide real-time price statistics from the last 60 seconds (sliding time interval).
 There will be three APIs:
