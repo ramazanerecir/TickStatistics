@@ -11,7 +11,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.Console;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
@@ -35,33 +34,27 @@ public class CalculationServiceImpl implements CalculationService {
     @Override
     @RabbitListener(queues = "${rabbitmq.calculation.queue.name}")
     public void calculate(InstrumentTick instrumentTick) {
+        long calcTimestamp = new Timestamp(new Date().getTime()).getTime();
+        calculate(instrumentTick, calcTimestamp);
+    }
 
+    @Override
+    public void calculate(InstrumentTick instrumentTick, long calcTimestamp)
+    {
         Statistics statistics;
-        if(instrumentTick.getStatistics() != null)
-        {
+        if (instrumentTick.getTickList() != null && !instrumentTick.getTickList().isEmpty()) {
+            if(instrumentTick.getStatistics() != null) {
             /*
                 Triggered from Scheduler, and tick list is not changed,
                 so we only need to calculate twap and twap2
                 which are changing according to calculation time
              */
-            statistics = instrumentTick.getStatistics();
-
-            double[] resultArray = calculateTwapAndDrawdown(instrumentTick.getTickList());
-
-            //Twap
-            statistics.setTwap(scale(resultArray[0], tickStatisticsConfiguration.getScale()));
-            //Twap2
-            statistics.setTwap2(scale(resultArray[1], tickStatisticsConfiguration.getScale()));
-            //MaxDrawdown is expected to not changed
-            statistics.setMaxDrawdown(scale(resultArray[2], tickStatisticsConfiguration.getPriceScale()));
-        }
-        else {
-            statistics = new Statistics();
-            statistics.setInstrument(instrumentTick.getInstrument());
-            statistics.setInstrumentUpdatedAt(instrumentTick.getUpdatedAt());
-
-            if (instrumentTick.getTickList() != null &&
-                    !instrumentTick.getTickList().isEmpty()) {
+                statistics = instrumentTick.getStatistics();
+            }
+            else {
+                statistics = new Statistics();
+                statistics.setInstrument(instrumentTick.getInstrument());
+                statistics.setInstrumentUpdatedAt(instrumentTick.getUpdatedAt());
 
                 //Sort by price to calculate volatility & quantile
                 instrumentTick.getTickList().sort(Comparator.comparing(Tick::getPrice));
@@ -86,18 +79,25 @@ public class CalculationServiceImpl implements CalculationService {
                 //Quantile
                 statistics.setQuantile(scale(calculateQuantile(instrumentTick.getTickList()),
                         tickStatisticsConfiguration.getScale()));
-
-                double[] resultArray = calculateTwapAndDrawdown(instrumentTick.getTickList());
-
-                //Twap
-                statistics.setTwap(scale(resultArray[0], tickStatisticsConfiguration.getScale()));
-                //Twap2
-                statistics.setTwap2(scale(resultArray[1], tickStatisticsConfiguration.getScale()));
-                //MaxDrawdown
-                statistics.setMaxDrawdown(scale(resultArray[2], tickStatisticsConfiguration.getPriceScale()));
             }
+
+            double[] resultArray = calculateTwapAndDrawdown(instrumentTick.getTickList(), calcTimestamp);
+
+            //Twap
+            statistics.setTwap(scale(resultArray[0], tickStatisticsConfiguration.getScale()));
+            //Twap2
+            statistics.setTwap2(scale(resultArray[1], tickStatisticsConfiguration.getScale()));
+            //MaxDrawdown is expected to not changed
+            statistics.setMaxDrawdown(scale(resultArray[2], tickStatisticsConfiguration.getPriceScale()));
+        }
+        else
+        {
+            statistics = new Statistics();
+            statistics.setInstrument(instrumentTick.getInstrument());
+            statistics.setInstrumentUpdatedAt(instrumentTick.getUpdatedAt());
         }
 
+        statistics.setCalculatedAt(calcTimestamp);
         sendToStatisticsQueue(statistics);
     }
 
@@ -136,12 +136,9 @@ public class CalculationServiceImpl implements CalculationService {
                 * (totalWeight - tickStatisticsConfiguration.getPercentile()) / weight;
     }
 
-    private double[] calculateTwapAndDrawdown(List<Tick> tickList) {
-
+    private double[] calculateTwapAndDrawdown(List<Tick> tickList, long calcTimestamp) {
         //Sort by timestamp to calculate twap and drawdown
         tickList.sort(Comparator.comparing(Tick::getTimestamp));
-
-        long calcTimestamp = new Timestamp(new Date().getTime()).getTime();
 
         double twap = 0.0;
         double twap2 = 0.0;
@@ -218,7 +215,6 @@ public class CalculationServiceImpl implements CalculationService {
 
     @Override
     public void sendToStatisticsQueue(Statistics statistics) {
-        statistics.setCalculatedAt(new Timestamp(new Date().getTime()).getTime());
         rabbitTemplate.convertAndSend(exchangeName, routingName, statistics);
     }
 }
