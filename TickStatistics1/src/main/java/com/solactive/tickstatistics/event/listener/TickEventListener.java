@@ -32,12 +32,12 @@ public class TickEventListener {
     @EventListener
     public void listenTickEvent(TickEventCreated tickEventCreated) {
 
-        CalculationEvent calculationEvent = (CalculationEvent)tickEventCreated.getSource();
+        CalculationEvent calculationEvent = (CalculationEvent) tickEventCreated.getSource();
 
         sendToCalculationQueue(calculationEvent);
     }
 
-    private void sendToCalculationQueue(CalculationEvent calculationEvent) {
+    public void sendToCalculationQueue(CalculationEvent calculationEvent) {
 
         InstrumentTick instrumentTick;
 
@@ -53,7 +53,7 @@ public class TickEventListener {
         Statistics statistics = statisticsRepository.get(calculationEvent.getInstrument());
 
         if(instrumentTick.getTickList().isEmpty() &&
-                (statistics == null || statistics.getCount() == 0))
+              (statistics == null || statistics.getCount() == 0))
         {
             //No need to calculation
             return;
