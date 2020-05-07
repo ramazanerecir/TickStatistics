@@ -45,6 +45,7 @@ public class CalculationServiceImpl implements CalculationService {
         if (instrumentTick.getTickList() != null && !instrumentTick.getTickList().isEmpty()) {
             if(instrumentTick.getStatistics() != null) {
             /*
+                If instrumentTick has statistics:
                 Triggered from Scheduler, and tick list is not changed,
                 so we only need to calculate twap and twap2
                 which are changing according to calculation time

@@ -55,16 +55,20 @@ public class TickEventListener {
         if(instrumentTick.getTickList().isEmpty() &&
               (statistics == null || statistics.getCount() == 0))
         {
-            //No need to calculation
+            //No need to calculation in such a case :
+            // statistics is empty and no ticks, so no need to send instrument to calculation queue
             return;
         }
 
         if(calculationEvent.getCalculationType() == CalculationType.SCHEDULED &&
                 !instrumentTick.getTickList().isEmpty() &&
+                statistics != null &&
                 statistics.getCount() == instrumentTick.getTickList().size() &&
                 statistics.getInstrumentUpdatedAt() == instrumentTick.getUpdatedAt())
         {
-            //No need to calculate all, Only Twap calculation is required
+            //No need to calculate all, Only Twap calculation is required, so wee need to add statistics
+            //Tricky way to decrease the statistics calculation in such a case :
+            //Tick count is not changed and there is no new tick for the instrument(updatedAt)
             instrumentTick.setStatistics(statistics.copy());
         }
 
