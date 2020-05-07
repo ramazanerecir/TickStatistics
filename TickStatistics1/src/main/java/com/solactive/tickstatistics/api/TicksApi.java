@@ -1,10 +1,15 @@
 package com.solactive.tickstatistics.api;
 
 import com.solactive.tickstatistics.entity.dto.TickDto;
+import io.swagger.annotations.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
 
+@Api(value = "Ticks API", tags = "ticks")
 public interface TicksApi {
 
-    ResponseEntity<Void> tick(@RequestBody TickDto tickDto);
+    @ApiOperation(value = "Every time a new tick arrives, this endpoint will be called."
+            , tags = "ticks", consumes = "application/json")
+    @ApiResponses(value = { @ApiResponse(code = 201, message = "Tick is created"),
+            @ApiResponse(code = 204, message = "Tick is not valid") })
+    ResponseEntity<Void> tick(@ApiParam(name = "Tick", value = "New tick", required = true) TickDto tickDto);
 }
