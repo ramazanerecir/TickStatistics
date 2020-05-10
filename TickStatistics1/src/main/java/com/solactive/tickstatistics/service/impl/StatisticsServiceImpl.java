@@ -1,5 +1,6 @@
 package com.solactive.tickstatistics.service.impl;
 
+import com.solactive.tickstatistics.component.TickValidator;
 import com.solactive.tickstatistics.entity.Statistics;
 import com.solactive.tickstatistics.entity.dto.StatisticsDto;
 import com.solactive.tickstatistics.repository.StatisticsRepository;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class StatisticsServiceImpl implements StatisticsService {
 
     private final StatisticsRepository statisticsRepository;
+    private final TickValidator tickValidator;
 
     @Override
     public StatisticsDto getStatistics() {
@@ -30,7 +32,9 @@ public class StatisticsServiceImpl implements StatisticsService {
     private StatisticsDto generateDto(Statistics statistics) {
         StatisticsDto dto = new StatisticsDto();
 
-        if(statistics != null)
+        //if instrument's last tick arrival is out of sliding time interval, statistics should be empty.
+        if(statistics != null &&
+            tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt()))
         {
             dto.setAvg(statistics.getAvg());
             dto.setCount(statistics.getCount());

@@ -1,5 +1,6 @@
 package com.solactive.tickstatistics.service.impl;
 
+import com.solactive.tickstatistics.component.TickValidator;
 import com.solactive.tickstatistics.entity.Statistics;
 import com.solactive.tickstatistics.entity.dto.StatisticsDto;
 import com.solactive.tickstatistics.repository.StatisticsRepository;
@@ -7,7 +8,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.sql.Timestamp;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -21,15 +26,33 @@ class StatisticsServiceImplTest {
     @Mock
     private StatisticsRepository statisticsRepository;
 
+    @Mock
+    private TickValidator tickValidator;
+
     @Test
     void getStatistics() {
         Statistics statistics = new Statistics();
         statistics.setAvg(100);
+        statistics.setInstrumentUpdatedAt(new Timestamp(new Date().getTime()).getTime());
 
         when(statisticsRepository.getAggregated()).thenReturn(statistics);
+        when(tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt())).thenReturn(true);
         StatisticsDto statisticsDto = statisticsService.getStatistics();
 
         assertEquals(statistics.getAvg(), statisticsDto.getAvg());
+    }
+
+    @Test
+    void getStatisticsNotValid() {
+        Statistics statistics = new Statistics();
+        statistics.setAvg(100);
+        statistics.setInstrumentUpdatedAt(0L);
+
+        when(statisticsRepository.getAggregated()).thenReturn(statistics);
+        when(tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt())).thenReturn(false);
+        StatisticsDto statisticsDto = statisticsService.getStatistics();
+
+        assertEquals(0.0, statisticsDto.getAvg());
     }
 
     @Test
@@ -37,10 +60,26 @@ class StatisticsServiceImplTest {
         String instrument = "IBM.N";
         Statistics statistics = new Statistics();
         statistics.setAvg(100);
+        statistics.setInstrumentUpdatedAt(new Timestamp(new Date().getTime()).getTime());
 
         when(statisticsRepository.get(instrument)).thenReturn(statistics);
+        when(tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt())).thenReturn(true);
         StatisticsDto statisticsDto = statisticsService.getStatistics(instrument);
 
         assertEquals(statistics.getAvg(), statisticsDto.getAvg());
+    }
+
+    @Test
+    void getStatisticsByInstrumentNotValid() {
+        String instrument = "IBM.N";
+        Statistics statistics = new Statistics();
+        statistics.setAvg(100);
+        statistics.setInstrumentUpdatedAt(0L);
+
+        when(statisticsRepository.get(instrument)).thenReturn(statistics);
+        when(tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt())).thenReturn(false);
+        StatisticsDto statisticsDto = statisticsService.getStatistics(instrument);
+
+        assertEquals(0.0, statisticsDto.getAvg());
     }
 }

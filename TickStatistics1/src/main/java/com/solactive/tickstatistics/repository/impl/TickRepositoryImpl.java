@@ -48,7 +48,6 @@ public class TickRepositoryImpl implements TickRepository {
         instrumentMap.putIfAbsent(instrument, new InstrumentTick(instrument));
         instrumentMap.get(instrument).getTickList().add(tick);
         instrumentMap.get(instrument).setUpdatedAt(new Timestamp(new Date().getTime()).getTime());
-
     }
 
     protected void createTickEvent(String instrument)
@@ -69,10 +68,18 @@ public class TickRepositoryImpl implements TickRepository {
             instrumentTick = new InstrumentTick();
             instrumentTick.setInstrument(instrument);
             instrumentTick.setUpdatedAt(instrumentMap.get(instrument).getUpdatedAt());
-            instrumentTick.setTickList(instrumentMap.get(instrument).getTickList()
-                    .parallelStream()
-                    .filter(t -> tickValidator.validateTimestamp(t.getTimestamp()))
-                    .collect(Collectors.toList()));
+            //no need to collect tick list in case last tick arrival time is out of sliding time interval
+            if(tickValidator.validateTimestamp(instrumentTick.getUpdatedAt())) {
+                instrumentTick.setTickList(instrumentMap.get(instrument).getTickList()
+                        .parallelStream()
+                        .filter(t -> tickValidator.validateTimestamp(t.getTimestamp()))
+                        .collect(Collectors.toList()));
+            }
+            else
+            {
+                instrumentTick.setTickList(new ArrayList<>());
+            }
+
         }
         return instrumentTick;
     }
@@ -81,19 +88,26 @@ public class TickRepositoryImpl implements TickRepository {
     public InstrumentTick getFilteredAllTicks()
     {
         InstrumentTick instrumentTick = new InstrumentTick();
-        List<Tick> tickList = instrumentMap.values()
-                .parallelStream()
-                .map(InstrumentTick::getTickList)
-                .flatMap(List::stream)
-                .filter(t -> tickValidator.validateTimestamp(t.getTimestamp()))
-                .collect(Collectors.toList());
-
         instrumentTick.setInstrument(TickStatisticsConfiguration.aggregatedStatisticsName);
         instrumentTick.setUpdatedAt(instrumentMap.values()
                 .parallelStream()
                 .mapToLong(InstrumentTick::getUpdatedAt)
                 .max().orElse(0));
-        instrumentTick.setTickList(tickList);
+
+        //no need to collect tick list in case last tick arrival time is out of sliding time interval
+        if(tickValidator.validateTimestamp(instrumentTick.getUpdatedAt())) {
+            instrumentTick.setTickList(instrumentMap.values()
+                    .parallelStream()
+                    .map(InstrumentTick::getTickList)
+                    .flatMap(List::stream)
+                    .filter(t -> tickValidator.validateTimestamp(t.getTimestamp()))
+                    .collect(Collectors.toList()));
+        }
+        else
+        {
+            instrumentTick.setTickList(new ArrayList<>());
+        }
+
         return instrumentTick;
     }
 
