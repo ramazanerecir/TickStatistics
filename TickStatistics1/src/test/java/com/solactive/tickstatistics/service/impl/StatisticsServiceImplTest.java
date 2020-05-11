@@ -8,11 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.sql.Timestamp;
-import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -33,7 +29,7 @@ class StatisticsServiceImplTest {
     void getStatistics() {
         Statistics statistics = new Statistics();
         statistics.setAvg(100);
-        statistics.setInstrumentUpdatedAt(new Timestamp(new Date().getTime()).getTime());
+        statistics.setInstrumentUpdatedAt(System.currentTimeMillis());
 
         when(statisticsRepository.getAggregated()).thenReturn(statistics);
         when(tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt())).thenReturn(true);
@@ -60,7 +56,7 @@ class StatisticsServiceImplTest {
         String instrument = "IBM.N";
         Statistics statistics = new Statistics();
         statistics.setAvg(100);
-        statistics.setInstrumentUpdatedAt(new Timestamp(new Date().getTime()).getTime());
+        statistics.setInstrumentUpdatedAt(System.currentTimeMillis());
 
         when(statisticsRepository.get(instrument)).thenReturn(statistics);
         when(tickValidator.validateTimestamp(statistics.getInstrumentUpdatedAt())).thenReturn(true);

@@ -1,11 +1,19 @@
 version: '3.1'
 services:
-  spboot-rabbitmq:
-    image: rabbitmq:3-management
+  ts-rabbitmq:
+    container_name: container-ts-rabbitmq
+    image: rabbitmq:latest
     ports:
       - '5672:5672'
       - '15672:15672'
     environment:
-      - RABBITMQ_DEFAULT_USER=solactive
-      - RABBITMQ_DEFAULT_PASS=solactive
+      - RABBITMQ_DEFAULT_USER=tsservice
+      - RABBITMQ_DEFAULT_PASS=tsservice
+  ts-redis:
+    container_name: container-ts-redis
+    image: redis:latest
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
 

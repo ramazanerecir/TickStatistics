@@ -8,9 +8,6 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import java.sql.Timestamp;
-import java.util.Date;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -38,7 +35,7 @@ class TickServiceImplTest {
         TickDto tickDto = new TickDto();
         tickDto.setInstrument("IBM.N");
         tickDto.setPrice(100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         when(tickValidator.validateTick(tickDto)).thenReturn(true);
         when(tickValidator.validateTimestamp(tickDto.getTimestamp())).thenReturn(true);
@@ -57,7 +54,7 @@ class TickServiceImplTest {
     void insertTickNotValidTick() {
         TickDto tickDto = new TickDto();
         tickDto.setPrice(100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         when(tickValidator.validateTick(tickDto)).thenReturn(false);
         boolean result = tickService.insertTick(tickDto);
@@ -70,7 +67,7 @@ class TickServiceImplTest {
         TickDto tickDto = new TickDto();
         tickDto.setInstrument("IBM.N");
         tickDto.setPrice(100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         tickService.sendToTickQueue(tickDto);
         verify(rabbitTemplate).convertAndSend(stringCaptor.capture(), stringCaptor.capture(),

@@ -8,9 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.sql.Timestamp;
-import java.util.Date;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,7 +24,7 @@ class TickValidatorTest {
         TickDto tickDto = new TickDto();
         tickDto.setInstrument("IBM.N");
         tickDto.setPrice(100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         boolean result = tickValidator.validateTick(tickDto);
         assertTrue(result);
@@ -37,7 +34,7 @@ class TickValidatorTest {
     void validateTickNullInstrument() {
         TickDto tickDto = new TickDto();
         tickDto.setPrice(100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         boolean result = tickValidator.validateTick(tickDto);
         assertFalse(result);
@@ -48,7 +45,7 @@ class TickValidatorTest {
         TickDto tickDto = new TickDto();
         tickDto.setInstrument("");
         tickDto.setPrice(100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         boolean result = tickValidator.validateTick(tickDto);
         assertFalse(result);
@@ -59,7 +56,7 @@ class TickValidatorTest {
         TickDto tickDto = new TickDto();
         tickDto.setInstrument("IBM.N");
         tickDto.setPrice(Double.NaN);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         boolean result = tickValidator.validateTick(tickDto);
         assertFalse(result);
@@ -71,7 +68,7 @@ class TickValidatorTest {
         tickDto.setInstrument("IBM.N");
         tickDto.setPrice(Double.POSITIVE_INFINITY);
 
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         boolean result = tickValidator.validateTick(tickDto);
         assertFalse(result);
@@ -82,7 +79,7 @@ class TickValidatorTest {
         TickDto tickDto = new TickDto();
         tickDto.setInstrument("IBM.N");
         tickDto.setPrice(-100);
-        tickDto.setTimestamp(new Timestamp(new Date().getTime()).getTime());
+        tickDto.setTimestamp(System.currentTimeMillis());
 
         boolean result = tickValidator.validateTick(tickDto);
         assertFalse(result);
@@ -90,13 +87,13 @@ class TickValidatorTest {
 
     @Test
     void validateTimestamp() {
-        boolean result = tickValidator.validateTimestamp(new Timestamp(new Date().getTime()).getTime());
+        boolean result = tickValidator.validateTimestamp(System.currentTimeMillis());
         assertTrue(result);
     }
 
     @Test
     void validateTimestampOutOfRange() {
-        boolean result = tickValidator.validateTimestamp(new Timestamp(new Date().getTime()).getTime()
+        boolean result = tickValidator.validateTimestamp(System.currentTimeMillis()
                 - tickStatisticsConfiguration.getSlidingTimeInterval()-1);
         assertFalse(result);
     }

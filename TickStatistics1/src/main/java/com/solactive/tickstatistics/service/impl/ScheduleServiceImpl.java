@@ -19,11 +19,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Scheduled(fixedRateString = "${tick.calculation.time.interval}")
     public void recalculateStatistics() {
-        //TODO: check instrument updatedAt while retrieving instrument list
-        //no need to retrieve instruments which were updated out of the sliding time interval
         tickRepository.getInstrumentList().forEach(this::createTickEvent);
-
-        createTickEvent(TickStatisticsConfiguration.aggregatedStatisticsName);
     }
 
     protected void createTickEvent(String instrument)

@@ -15,9 +15,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import java.sql.Timestamp;
 import java.util.Collections;
-import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -55,8 +53,7 @@ class TickEventListenerTest {
 
         InstrumentTick instrumentTick = new InstrumentTick();
         instrumentTick.setInstrument(instrument);
-        instrumentTick.setTickList(Collections.singletonList(new Tick(100,
-                new Timestamp(new Date().getTime()).getTime())));
+        instrumentTick.setTickList(Collections.singletonList(new Tick(100, System.currentTimeMillis())));
 
         when(tickRepository.getFilteredInstrumentTick(instrument)).thenReturn(instrumentTick);
         tickEventListener.listenTickEvent(tickEventCreated);
@@ -74,8 +71,7 @@ class TickEventListenerTest {
 
         InstrumentTick instrumentTick = new InstrumentTick();
         instrumentTick.setInstrument(instrument);
-        instrumentTick.setTickList(Collections.singletonList(new Tick(100,
-                new Timestamp(new Date().getTime()).getTime())));
+        instrumentTick.setTickList(Collections.singletonList(new Tick(100, System.currentTimeMillis())));
 
         when(tickRepository.getFilteredInstrumentTick(instrument)).thenReturn(instrumentTick);
         tickEventListener.sendToCalculationQueue(calculationEvent);
@@ -91,12 +87,11 @@ class TickEventListenerTest {
         String instrument = TickStatisticsConfiguration.aggregatedStatisticsName;
         CalculationEvent calculationEvent = new CalculationEvent(instrument, CalculationType.SCHEDULED);
 
-        long timestamp = new Timestamp(new Date().getTime()).getTime();
+        long timestamp = System.currentTimeMillis();
         InstrumentTick instrumentTick = new InstrumentTick();
         instrumentTick.setInstrument(instrument);
         instrumentTick.setUpdatedAt(timestamp);
-        instrumentTick.setTickList(Collections.singletonList(new Tick(100,
-                new Timestamp(new Date().getTime()).getTime())));
+        instrumentTick.setTickList(Collections.singletonList(new Tick(100, System.currentTimeMillis())));
 
         Statistics statistics = new Statistics();
         statistics.setCount(1);

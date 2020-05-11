@@ -6,15 +6,14 @@ import com.solactive.tickstatistics.entity.InstrumentTick;
 import com.solactive.tickstatistics.entity.Tick;
 import com.solactive.tickstatistics.entity.dto.TickDto;
 import com.solactive.tickstatistics.enums.CalculationType;
+import com.solactive.tickstatistics.repository.RedisRepository;
 import com.solactive.tickstatistics.service.TickEventPublisher;
 import com.solactive.tickstatistics.repository.TickRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +22,8 @@ import java.util.stream.Collectors;
 @Repository
 @RequiredArgsConstructor
 public class TickRepositoryImpl implements TickRepository {
+
+    private final RedisRepository redisRepository;
 
     private final TickEventPublisher tickEventPublisher;
     private final TickValidator tickValidator;
@@ -47,7 +48,9 @@ public class TickRepositoryImpl implements TickRepository {
     {
         instrumentMap.putIfAbsent(instrument, new InstrumentTick(instrument));
         instrumentMap.get(instrument).getTickList().add(tick);
-        instrumentMap.get(instrument).setUpdatedAt(new Timestamp(new Date().getTime()).getTime());
+        instrumentMap.get(instrument).setUpdatedAt(System.currentTimeMillis());
+        redisRepository.insert(instrument, instrumentMap.get(instrument).getUpdatedAt());
+        redisRepository.insert(TickStatisticsConfiguration.aggregatedStatisticsName, instrumentMap.get(instrument).getUpdatedAt());
     }
 
     protected void createTickEvent(String instrument)
@@ -67,7 +70,11 @@ public class TickRepositoryImpl implements TickRepository {
         else {
             instrumentTick = new InstrumentTick();
             instrumentTick.setInstrument(instrument);
-            instrumentTick.setUpdatedAt(instrumentMap.get(instrument).getUpdatedAt());
+
+            //Retrieving from Redis cache instead of below
+            //instrumentTick.setUpdatedAt(instrumentMap.get(instrument).getUpdatedAt());
+            instrumentTick.setUpdatedAt(redisRepository.get(instrument));
+
             //no need to collect tick list in case last tick arrival time is out of sliding time interval
             if(tickValidator.validateTimestamp(instrumentTick.getUpdatedAt())) {
                 instrumentTick.setTickList(instrumentMap.get(instrument).getTickList()
@@ -89,10 +96,16 @@ public class TickRepositoryImpl implements TickRepository {
     {
         InstrumentTick instrumentTick = new InstrumentTick();
         instrumentTick.setInstrument(TickStatisticsConfiguration.aggregatedStatisticsName);
+
+
+        //Retrieving from Redis cache instead of below
+        /*
         instrumentTick.setUpdatedAt(instrumentMap.values()
                 .parallelStream()
                 .mapToLong(InstrumentTick::getUpdatedAt)
                 .max().orElse(0));
+        */
+        instrumentTick.setUpdatedAt(redisRepository.get(TickStatisticsConfiguration.aggregatedStatisticsName));
 
         //no need to collect tick list in case last tick arrival time is out of sliding time interval
         if(tickValidator.validateTimestamp(instrumentTick.getUpdatedAt())) {
@@ -114,7 +127,13 @@ public class TickRepositoryImpl implements TickRepository {
     @Override
     public List<String> getInstrumentList()
     {
-        return new ArrayList<>(instrumentMap.keySet());
+        //Filtering instruments which is in sliding time interval using redis cache
+        return redisRepository.getMap().entrySet()
+                .parallelStream()
+                .filter(entry -> tickValidator.validateTimestamp((Long)entry.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        //return new ArrayList<>(instrumentMap.keySet());
     }
 
 }

@@ -5,9 +5,6 @@ import com.solactive.tickstatistics.entity.dto.TickDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
-import java.util.Date;
-
 @Component
 @RequiredArgsConstructor
 public class TickValidator {
@@ -23,7 +20,6 @@ public class TickValidator {
     }
 
     public boolean validateTimestamp(long tickTimestamp) {
-        return tickTimestamp >= (new Timestamp(new Date().getTime()).getTime()
-                                    -tickStatisticsConfiguration.getSlidingTimeInterval());
+        return tickTimestamp >= (System.currentTimeMillis() - tickStatisticsConfiguration.getSlidingTimeInterval());
     }
 }

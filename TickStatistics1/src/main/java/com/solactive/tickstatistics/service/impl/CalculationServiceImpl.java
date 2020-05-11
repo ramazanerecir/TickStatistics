@@ -13,9 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.Timestamp;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -34,8 +32,7 @@ public class CalculationServiceImpl implements CalculationService {
     @Override
     @RabbitListener(queues = "${rabbitmq.calculation.queue.name}")
     public void calculate(InstrumentTick instrumentTick) {
-        long calcTimestamp = new Timestamp(new Date().getTime()).getTime();
-        calculate(instrumentTick, calcTimestamp);
+        calculate(instrumentTick, System.currentTimeMillis());
     }
 
     @Override

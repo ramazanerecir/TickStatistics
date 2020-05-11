@@ -10,9 +10,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import java.sql.Timestamp;
 import java.util.Collections;
-import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
@@ -61,7 +59,7 @@ class CalculationServiceImplTest {
     void calculateWithTimeStampNoTicks() {
         InstrumentTick instrumentTick = new InstrumentTick();
         instrumentTick.setInstrument("IBM.N");
-        long calcTimestamp = new Timestamp(new Date().getTime()).getTime();
+        long calcTimestamp = System.currentTimeMillis();
 
         calculationService.calculate(instrumentTick, calcTimestamp);
 
@@ -82,15 +80,14 @@ class CalculationServiceImplTest {
     void calculateWithTimeStampHasStatistics() {
         InstrumentTick instrumentTick = new InstrumentTick();
         instrumentTick.setInstrument("IBM.N");
-        instrumentTick.setTickList(Collections.singletonList(new Tick(10, new Timestamp(new Date().getTime()).getTime()-100)));
+        instrumentTick.setTickList(Collections.singletonList(new Tick(10,System.currentTimeMillis()-100)));
 
         Statistics statistics = new Statistics();
         statistics.setCount(10);
         statistics.setInstrument(instrumentTick.getInstrument());
         instrumentTick.setStatistics(statistics);
-        long calcTimestamp = new Timestamp(new Date().getTime()).getTime();
 
-        calculationService.calculate(instrumentTick, calcTimestamp);
+        calculationService.calculate(instrumentTick, System.currentTimeMillis());
 
         verify(calculationService, times(1))
                 .sendToStatisticsQueue(statisticsCaptor.capture());

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +38,7 @@ class ScheduleServiceImplTest {
     void recalculateStatistics() {
         String instrument = "IBM.N";
 
-        when(tickRepository.getInstrumentList()).thenReturn(Collections.singletonList(instrument));
+        when(tickRepository.getInstrumentList()).thenReturn(Arrays.asList(instrument, TickStatisticsConfiguration.aggregatedStatisticsName));
         scheduleService.recalculateStatistics();
 
         verify(scheduleService, times(2))
